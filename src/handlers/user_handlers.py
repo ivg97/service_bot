@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from database import get_db_session, User, Appointment
 from keyboards import main_menu_keyboard, services_keyboard, admin_keyboard
 from states import BookingStates
-from src import config
+import config
 
 router = Router()
 
