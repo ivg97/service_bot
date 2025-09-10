@@ -99,8 +99,9 @@ def admin_keyboard():
     builder.button(text="➕ Добавить услугу")
     builder.button(text="✏️ Редактировать услуги")
     builder.button(text="📅 Управление записями")
+    builder.button(text="⚙️ Настройки")
     builder.button(text="⬅️ В главное меню")
-    builder.adjust(1, 2, 1, 1)
+    builder.adjust(1, 2, 2)
     return builder.as_markup(resize_keyboard=True)
 
 

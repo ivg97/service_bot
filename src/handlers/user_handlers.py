@@ -3,10 +3,11 @@ from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from database import get_db_session, User, Appointment
+from database import get_db_session, User, Appointment, Config
 from keyboards import main_menu_keyboard, services_keyboard, admin_keyboard
 from states import BookingStates
 import config
+from utils.decorators import is_admin
 
 router = Router()
 
@@ -102,7 +103,14 @@ async def show_contacts(message: Message):
 
 
 @router.message(F.text == "⚙️ Настройки")
+@is_admin
 async def show_settings(message: Message):
+    session = get_db_session()
+    all_config = session.query(Config).all()
+    text = f"⚙️ Текущие настройки:\n\n"
+    for conf in all_config:
+        text += f"{conf.name}: {conf.value}\n"
+    session.close()
     settings_text = (
         "⚙️ Настройки профиля:\n\n"
         "Здесь вы можете:\n"
@@ -111,7 +119,7 @@ async def show_settings(message: Message):
         "• Посмотреть историю записей\n\n"
         "Функционал в разработке 🛠"
     )
-    await message.answer(settings_text)
+    await message.answer(text)
 
 
 @router.message(F.text == "⬅️ В главное меню")
@@ -121,6 +129,7 @@ async def back_to_main(message: Message, state: FSMContext):
 
 
 @router.message(F.text.in_(["📊 Статистика", "➕ Добавить услугу", "✏️ Редактировать услуги", "📅 Управление записями"]))
+# @is_admin
 async def admin_actions(message: Message):
     if message.from_user.id in config.ADMIN_IDS:
         await message.answer("Панель администратора:", reply_markup=admin_keyboard())

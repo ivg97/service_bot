@@ -69,3 +69,4 @@ async def add_service_price(message: Message, state: FSMContext):
 
     except ValueError:
         await message.answer("❌ Введите корректную цену (число)")
+
