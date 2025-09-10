@@ -9,6 +9,13 @@ engine = create_engine(config.DB_URL)
 Session = sessionmaker(bind=engine)
 
 
+class Config(Base):
+    __tablename__ = 'config'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    value = Column(String)
+
 class User(Base):
     __tablename__ = 'users'
 
