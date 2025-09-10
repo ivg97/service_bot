@@ -2,8 +2,9 @@ from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
+from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
-from database import get_db_session, User, Appointment, Config
+from database import get_db_session, User, Appointment, Config, Service
 from keyboards import main_menu_keyboard, services_keyboard, admin_keyboard
 from states import BookingStates
 import config
@@ -122,14 +123,69 @@ async def show_settings(message: Message):
     await message.answer(text)
 
 
+@router.message(F.text == "✏️ Редактировать услуги")
+@is_admin
+async def edit_service(message: Message):
+    session = get_db_session()
+    all_services = session.query(Service).all()
+
+    builder = InlineKeyboardBuilder()
+
+    for service in all_services:
+        builder.button(
+            text=f"{service.name} - {service.price}₽",
+            callback_data=f"edit_service_{service.id}"
+        )
+
+    builder.button(text="🔙 Назад", callback_data="admin_back")
+    builder.adjust(1)
+
+    # Отправляем сообщение с клавиатурой
+    await message.answer(
+        "⚙️ Выберите услугу для редактирования:",
+        reply_markup=builder.as_markup()
+    )
+
+
+@router.callback_query(F.data.startswith("edit_service_"))
+@is_admin
+async def handle_service_selection(callback):
+    # Извлекаем ID услуги из callback_data
+    service_id = int(callback.data.split("_")[2])
+
+    session = get_db_session()
+    service = session.query(Service).filter(Service.id == service_id).first()
+    session.close()
+
+    if not service:
+        await callback.answer("Услуга не найдена!")
+        return
+
+    # Создаем клавиатуру для действий с выбранной услугой
+    action_builder = InlineKeyboardBuilder()
+    action_builder.button(text="✏️ Изменить название", callback_data=f"change_name_{service.id}")
+    action_builder.button(text="💰 Изменить цену", callback_data=f"change_price_{service.id}")
+    action_builder.button(text="🗑️ Удалить услугу", callback_data=f"delete_service_{service.id}")
+    action_builder.button(text="🔙 Назад к списку", callback_data="back_to_services")
+    action_builder.adjust(1)  # По одной кнопке в строке
+
+    await callback.message.edit_text(
+        f"📋 Редактирование услуги:\n\n"
+        f"• Название: {service.name}\n"
+        f"• Цена: {service.price}₽\n\n"
+        f"Выберите действие:",
+        reply_markup=action_builder.as_markup()
+    )
+    await callback.answer()
+
 @router.message(F.text == "⬅️ В главное меню")
 async def back_to_main(message: Message, state: FSMContext):
     await state.clear()
     await cmd_start(message)
 
 
-@router.message(F.text.in_(["📊 Статистика", "➕ Добавить услугу", "✏️ Редактировать услуги", "📅 Управление записями"]))
-# @is_admin
+@router.message(F.text.in_(["✏️ Редактировать услуги", "📅 Управление записями"]))
+@is_admin
 async def admin_actions(message: Message):
     if message.from_user.id in config.ADMIN_IDS:
         await message.answer("Панель администратора:", reply_markup=admin_keyboard())

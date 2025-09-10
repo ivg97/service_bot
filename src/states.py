@@ -10,3 +10,7 @@ class AdminStates(StatesGroup):
     waiting_for_service_name = State()
     waiting_for_service_price = State()
     waiting_for_service_duration = State()
+
+class EditService(StatesGroup):
+    waiting_for_new_name = State()
+    waiting_for_new_price = State()
