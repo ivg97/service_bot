@@ -82,34 +82,35 @@ async def time_selected(callback: CallbackQuery, state: FSMContext):
 async def confirm_booking(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
 
-    session = get_db_session()
-    service = session.query(Service).get(data['service_id'])
-    user = session.query(User).filter(User.telegram_id == callback.from_user.id).first()
+    # session = get_db_session()
+    with get_db_session() as session:
+        service = session.query(Service).get(data['service_id'])
+        user = session.query(User).filter(User.telegram_id == callback.from_user.id).first()
 
-    from datetime import datetime
-    appointment_datetime = datetime.strptime(
-        f"{data['selected_date']} {data['selected_time']}",
-        '%Y-%m-%d %H:%M'
-    )
+        from datetime import datetime
+        appointment_datetime = datetime.strptime(
+            f"{data['selected_date']} {data['selected_time']}",
+            '%Y-%m-%d %H:%M'
+        )
 
-    appointment = Appointment(
-        user_id=user.id,
-        service_id=service.id,
-        appointment_time=appointment_datetime,
-        status='confirmed'
-    )
+        appointment = Appointment(
+            user_id=user.id,
+            service_id=service.id,
+            appointment_time=appointment_datetime,
+            status='confirmed'
+        )
 
-    session.add(appointment)
-    session.commit()
-    session.close()
+        session.add(appointment)
+        session.commit()
+        # session.close()
 
-    await callback.message.edit_text(
-        "✅ Запись успешно оформлена!\n\n"
-        f"📋 Услуга: {service.name}\n"
-        f"📅 Дата: {appointment_datetime.strftime('%d.%m.%Y %H:%M')}\n"
-        f"💵 Стоимость: {service.price}₽\n\n"
-        "Мы ждем вас! 🎉"
-    )
+        await callback.message.edit_text(
+            "✅ Запись успешно оформлена!\n\n"
+            f"📋 Услуга: {service.name}\n"
+            f"📅 Дата: {appointment_datetime.strftime('%d.%m.%Y %H:%M')}\n"
+            f"💵 Стоимость: {service.price}₽\n\n"
+            "Мы ждем вас! 🎉"
+        )
 
     # Оповещение администратора
     for admin_id in config.ADMIN_IDS:
