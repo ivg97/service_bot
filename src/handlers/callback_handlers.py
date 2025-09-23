@@ -3,8 +3,9 @@ from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from database import get_db_session, User, Service, Appointment
-from keyboards import services_keyboard, date_keyboard, time_keyboard, confirm_keyboard, main_menu_keyboard, \
-    back_to_main_keyboard
+from keyboards import services_keyboard, date_keyboard, time_keyboard, \
+    confirm_keyboard, main_menu_keyboard, \
+    back_to_main_keyboard, delete_services_keyboard
 from states import BookingStates
 import config
 
@@ -26,20 +27,16 @@ async def service_selected(callback: CallbackQuery, state: FSMContext):
         reply_markup=date_keyboard()
     )
 
-@router.callback_query(F.data.startswith("select_service_"))
+@router.callback_query(F.data.startswith("selectService_"))
 async def service_selected(callback: CallbackQuery, state: FSMContext):
-    service_id = int(callback.data.split('_')[1])
-    session = get_db_session()
-    service = session.query(Service).get(service_id)
-    session.close()
+    app_id = int(callback.data.split('_')[1])
+    with get_db_session() as session:
+        app = session.query(Appointment).get(app_id)
 
-    await state.update_data(service_id=service_id)
-    await state.set_state(BookingStates.waiting_for_date)
-
-    await callback.message.edit_text(
-        f"📅 Вы выбрали: {service.name}\n💵 Цена: {service.price}₽\n⏱ Длительность: {service.duration} мин.\n\nВыберите дату:",
-        reply_markup=date_keyboard()
-    )
+        await callback.message.edit_text(
+            f"📅 Ваша запись: {app.service.name}\n💵 Цена: {app.service.price}₽\n⏱ Длительность: {app.service.duration} мин.",
+            reply_markup=delete_services_keyboard()
+        )
 
 
 @router.callback_query(F.data.startswith("date_"))
@@ -147,6 +144,14 @@ async def confirm_booking(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "cancel_booking")
 async def cancel_booking(callback: CallbackQuery, state: FSMContext):
     await state.clear()
+    await callback.message.edit_text(
+        "❌ Запись отменена",
+        reply_markup=services_keyboard()
+    )
+
+@router.callback_query(F.data == "delete_app")
+async def delete_booking(callback: CallbackQuery, state: FSMContext):
+    # await state.clear()
     await callback.message.edit_text(
         "❌ Запись отменена",
         reply_markup=services_keyboard()

@@ -34,7 +34,7 @@ def services_keyboard():
 
 def delete_services_keyboard():
     builder = InlineKeyboardBuilder()
-    builder.button(text="❌️ Удалить услугу")
+    builder.button(text="❌️ Удалить услугу", callback_data="delete_app")
     builder.adjust(1)
     return builder.as_markup()
 
@@ -44,7 +44,7 @@ def select_services_keyboard(appointments):
         builder.button(
             text=f"{app.service.name} - "
                  f"{app.appointment_time.strftime('%d.%m.%Y %H:%M')}",
-            callback_data=f"select_service_{app.id}"
+            callback_data=f"selectService_{app.id}"
         )
     builder.adjust(1)
     return builder.as_markup(resize_keyboard=True)
