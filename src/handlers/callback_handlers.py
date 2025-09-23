@@ -26,6 +26,21 @@ async def service_selected(callback: CallbackQuery, state: FSMContext):
         reply_markup=date_keyboard()
     )
 
+@router.callback_query(F.data.startswith("select_service_"))
+async def service_selected(callback: CallbackQuery, state: FSMContext):
+    service_id = int(callback.data.split('_')[1])
+    session = get_db_session()
+    service = session.query(Service).get(service_id)
+    session.close()
+
+    await state.update_data(service_id=service_id)
+    await state.set_state(BookingStates.waiting_for_date)
+
+    await callback.message.edit_text(
+        f"📅 Вы выбрали: {service.name}\n💵 Цена: {service.price}₽\n⏱ Длительность: {service.duration} мин.\n\nВыберите дату:",
+        reply_markup=date_keyboard()
+    )
+
 
 @router.callback_query(F.data.startswith("date_"))
 async def date_selected(callback: CallbackQuery, state: FSMContext):

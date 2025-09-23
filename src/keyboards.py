@@ -16,6 +16,7 @@ def main_menu_keyboard():
 
 
 def services_keyboard():
+    print(services_keyboard.__name__)
     session = get_db_session()
     services = session.query(Service).filter(Service.is_active == True).all()
     session.close()
@@ -30,6 +31,24 @@ def services_keyboard():
     builder.button(text="⬅️ Назад", callback_data="back_to_main")
     builder.adjust(1)
     return builder.as_markup()
+
+def delete_services_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.button(text="❌️ Удалить услугу")
+    builder.adjust(1)
+    return builder.as_markup()
+
+def select_services_keyboard(appointments):
+    builder = InlineKeyboardBuilder()
+    for app in appointments:
+        builder.button(
+            text=f"{app.service.name} - "
+                 f"{app.appointment_time.strftime('%d.%m.%Y %H:%M')}",
+            callback_data=f"select_service_{app.id}"
+        )
+    builder.adjust(1)
+    return builder.as_markup(resize_keyboard=True)
+
 
 
 def date_keyboard():

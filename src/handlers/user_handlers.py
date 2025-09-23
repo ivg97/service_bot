@@ -5,7 +5,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from database import get_db_session, User, Appointment, Config, Service
-from keyboards import main_menu_keyboard, services_keyboard, admin_keyboard
+from keyboards import main_menu_keyboard, services_keyboard, admin_keyboard, \
+    delete_services_keyboard, select_services_keyboard
 from states import BookingStates
 import config
 from utils.decorators import is_admin
@@ -64,31 +65,27 @@ async def show_services(message: Message, state: FSMContext):
 
 @router.message(F.text == "📅 Мои записи")
 async def show_my_appointments(message: Message):
-    session = get_db_session()
-    user = session.query(User).filter(User.telegram_id == message.from_user.id).first()
+    with get_db_session() as session:
+        user = session.query(User).filter(User.telegram_id == message.from_user.id).first()
 
-    if user:
-        from datetime import datetime
-        appointments = session.query(Appointment).filter(
-            Appointment.user_id == user.id,
-            Appointment.appointment_time >= datetime.now()
-        ).order_by(Appointment.appointment_time).all()
+        if user:
+            from datetime import datetime
+            appointments = session.query(Appointment).filter(
+                Appointment.user_id == user.id,
+                Appointment.appointment_time >= datetime.now()
+            ).order_by(Appointment.appointment_time).all()
 
-        if appointments:
-            text = "📅 Ваши ближайшие записи:\n\n"
-            for app in appointments:
-                text += (
-                    f"• {app.service.name} - {app.appointment_time.strftime('%d.%m.%Y %H:%M')}\n"
-                    f"  Статус: {app.status}\n"
-                    f"  Цена: {app.service.price}₽\n\n"
-                )
+            if appointments:
+                text = "📅 Выберите для подробного описания:\n\n"
+            else:
+                text = "📭 У вас нет предстоящих записей"
         else:
-            text = "📭 У вас нет предстоящих записей"
-    else:
-        text = "❌ Пользователь не найден"
+            text = "❌ Пользователь не найден"
 
-    session.close()
-    await message.answer(text)
+        await message.answer(
+            text,
+            reply_markup=select_services_keyboard(appointments))
+
 
 
 @router.message(F.text == "📞 Контакты")
