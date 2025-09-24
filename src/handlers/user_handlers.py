@@ -6,7 +6,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from database import get_db_session, User, Appointment, Config, Service
 from keyboards import main_menu_keyboard, services_keyboard, admin_keyboard, \
-    delete_services_keyboard, select_services_keyboard
+    cancel_appointment_keyboard, select_services_keyboard
 from states import BookingStates
 import config
 from utils.decorators import is_admin

@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from database import get_db_session, User, Service, Appointment
 from keyboards import services_keyboard, date_keyboard, time_keyboard, \
     confirm_keyboard, main_menu_keyboard, \
-    back_to_main_keyboard, delete_services_keyboard
+    back_to_main_keyboard, cancel_appointment_keyboard
 from states import BookingStates
 import config
 
@@ -33,10 +33,28 @@ async def service_selected(callback: CallbackQuery, state: FSMContext):
     with get_db_session() as session:
         app = session.query(Appointment).get(app_id)
 
-        await callback.message.edit_text(
-            f"📅 Ваша запись: {app.service.name}\n💵 Цена: {app.service.price}₽\n⏱ Длительность: {app.service.duration} мин.",
-            reply_markup=delete_services_keyboard()
-        )
+        # await callback.message.edit_text(
+        #     f"📅 Ваша запись: {app.service.name}\n"
+        #     f"💵 Цена: {app.service.price}₽\n"
+        #     f"⏱ Длительность: {app.service.duration} мин.\n"
+        #     f"Дата записи: {app.appointment_time.strftime('%d.%m.%Y %H:%M')}\n"
+        #     f"Статус: {app.status}",
+        #     reply_markup=cancel_appointment_keyboard()
+        # )
+        await state.update_data(app_id=app.id)
+        await state.set_state(BookingStates.waiting_for_date)
+
+        text =  f"📅 Ваша запись: {app.service.name}\n" \
+                f"💵 Цена: {app.service.price}₽\n" \
+                f"⏱ Длительность: {app.service.duration} мин.\n" \
+                f"Дата записи: {app.appointment_time.strftime('%d.%m.%Y %H:%M')}\n" \
+                f"Статус: {app.status}"
+    await callback.message.edit_text(
+        text,
+        reply_markup=cancel_appointment_keyboard()
+    )
+
+
 
 
 @router.callback_query(F.data.startswith("date_"))
@@ -143,19 +161,20 @@ async def confirm_booking(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "cancel_booking")
 async def cancel_booking(callback: CallbackQuery, state: FSMContext):
+    print(state.__dict__)
     await state.clear()
     await callback.message.edit_text(
         "❌ Запись отменена",
         reply_markup=services_keyboard()
     )
 
-@router.callback_query(F.data == "delete_app")
-async def delete_booking(callback: CallbackQuery, state: FSMContext):
-    # await state.clear()
-    await callback.message.edit_text(
-        "❌ Запись отменена",
-        reply_markup=services_keyboard()
-    )
+# @router.callback_query(F.data == "delete_app")
+# async def delete_booking(callback: CallbackQuery, state: FSMContext):
+#     # await state.clear()
+#     await callback.message.edit_text(
+#         "❌ Запись отменена",
+#         reply_markup=services_keyboard()
+#     )
 
 
 @router.callback_query(F.data == "back_to_main")
@@ -185,4 +204,11 @@ async def back_to_dates(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
         "📅 Выберите дату:",
         reply_markup=date_keyboard()
+    )
+
+@router.callback_query(F.data == "show_confirm_cancel")
+async def show_confirm_cancel(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text(
+        "❓ Вы уверены, что хотите отменить запись?",
+        reply_markup=confirm_keyboard()
     )

@@ -32,9 +32,10 @@ def services_keyboard():
     builder.adjust(1)
     return builder.as_markup()
 
-def delete_services_keyboard():
+def cancel_appointment_keyboard():
     builder = InlineKeyboardBuilder()
-    builder.button(text="❌️ Удалить услугу", callback_data="delete_app")
+    builder.button(text="❌️ Отменить запись", callback_data="show_confirm_cancel")
+    builder.button(text=" Редактировать запись", callback_data="edit_booking")
     builder.adjust(1)
     return builder.as_markup()
 
@@ -106,8 +107,8 @@ def time_keyboard(selected_date, service_duration):
 
 def confirm_keyboard():
     builder = InlineKeyboardBuilder()
-    builder.button(text="✅ Подтвердить", callback_data="confirm_booking")
-    builder.button(text="❌ Отменить", callback_data="cancel_booking")
+    builder.button(text="✅ Да, отменить запись", callback_data="confirm_booking")
+    builder.button(text="❌ Нет, оставить запись", callback_data="cancel_booking")
     builder.adjust(2)
     return builder.as_markup()
 
